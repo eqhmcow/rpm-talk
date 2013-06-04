@@ -1,0 +1,8 @@
+# set up rpmbuild environment
+mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+cat > ~/.rpmmacros <<'EOF'
+%_signature gpg
+%packager Daniel Sterling <sterling.daniel@gmail.com>
+%_gpg_name Daniel Scott Sterling
+%_topdir %(echo $HOME)/rpmbuild
+EOF

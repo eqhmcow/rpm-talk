@@ -1,0 +1,80 @@
+# let's install a package with a lot of dependencies
+
+# lots of popular CPAN distributions are in base or epel, but not
+# necessarily the latest version and not everything
+
+# ugh, building and installing a package for each dependency that isn't
+# already available is going to be painful, or at least take a while
+
+# is there a way to cheat ... ?
+
+# maybe we can use cpan(1) and build a single RPM for the dist with all the
+# dependencies included ... let's try, with Plack
+
+# create the initial spec file
+cd ~/src
+cpanspec -v Plack
+mv Plack-*.tar.gz ~/rpmbuild/SOURCES
+rpmbuild -ba --sign perl-Plack.spec
+
+# yup, lots of missing dependencies. ok, let's install CPAN
+sudo yum install perl-CPAN
+
+# set up cpan
+cpan
+o conf prerequisites_policy follow
+o conf build_requires_install_policy yes
+o conf commit
+
+# OK, let's update our spec file to build everything with CPAN
+cp perl-Plack.spec perl-Plack.spec.orig
+cp ~/docs/rainbows-ponies perl-Plack.spec
+
+# what changes do we need to make to the spec file?
+
+# first, comment out BuildArch since we'll be building binaries
+
+# remove our dependencies since we'll be building them!
+
+# under %prep, re-parse the output of the RPM perl dependencies auto-macro,
+# to filter out extraneous requirements
+
+# move the actual building to the %install section. instead of using
+# rpmbuild to do a build in the build directory, we'll have cpan build
+# packages in its build directories.  then, cpan will install files directly
+# into the package's build root.
+
+# to get cpan to build properly, we can use tricks similar to what tools
+# like local::lib do:
+
+export PERL_MB_OPT="--installdirs vendor --destdir $RPM_BUILD_ROOT";
+export PERL_MM_OPT="INSTALLDIRS=vendor DESTDIR=$RPM_BUILD_ROOT";
+export PERL5LIB="${RPM_BUILD_ROOT}/usr/local/lib64/perl5:${RPM_BUILD_ROOT}/usr/local/share/perl5:${RPM_BUILD_ROOT}/usr/lib64/perl5/vendor_perl:${RPM_BUILD_ROOT}/usr/share/perl5/vendor_perl"
+export PATH="${RPM_BUILD_ROOT}/usr/local/bin:${RPM_BUILD_ROOT}/usr/bin:$PATH";
+
+# actually execute cpan to install the dists:
+cpan -i MIYAGAWA/Plack-%{version}.tar.gz
+
+# we move the "make test" command into the %install section as well.
+
+# remove debugging files and the perllocal.pod file
+
+# and finally, add the extra directories cpan installed into to our %files listing.
+
+# ok, once the spec file is updated, we can build the package:
+time rpmbuild -ba --sign perl-Plack.spec
+
+# and now we install it:
+sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/perl-Plack-1.0024-1.el6.x86_64.rpm
+
+# is it live?
+yum info perl-Plack
+rpm -ql perl-Plack
+rpm -q --provides perl-Plack
+perl -MPlack -E 'say $Plack::VERSION'
+
+# when I get a tuit, go ahead and build proper, separate packages for those
+# dependencies!
+
+# for now, get rid of this monstrosity
+sudo yum remove perl-Plack

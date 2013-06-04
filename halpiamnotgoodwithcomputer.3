@@ -1,0 +1,14 @@
+# import your gpg key
+
+# you have a gpg key, right?
+# create one if needed:
+#gpg --gen-key
+
+# first, export key on your main box:
+#gpg --armor --export ; gpg --armor --export-secret-keys
+
+# then import private key to build box:
+gpg --import
+
+# and intall public key into rpm's trusted chain
+sudo rpm --import my-public-key

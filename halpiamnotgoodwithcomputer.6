@@ -1,0 +1,11 @@
+# build perl-Test-Simple package from spec file
+mv Test-Simple-*.tar.gz ~/rpmbuild/SOURCES
+rpmbuild -ba --sign perl-Test-Simple.spec
+
+# install the package we just built
+sudo rpm -Uvh ~/rpmbuild/RPMS/noarch/perl-Test-Simple-0.98-1.el6.noarch.rpm
+
+# is it live?
+yum info perl-Test-Simple
+perl -MTest::Simple -E 'say $Test::Simple::VERSION'
+# 0.98

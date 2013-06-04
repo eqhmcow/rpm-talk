@@ -1,0 +1,32 @@
+# let's install a package that isn't even in CentOS base or epel
+
+# do we have a package for Role::Tiny ?
+yum info perl-Role-Tiny
+
+# no, let's bulid one
+
+# first, install its dependencies
+sudo rpm -Uvh ~/rpmbuild/RPMS/noarch/perl-Test-Simple-0.98-1.el6.noarch.rpm
+sudo yum install perl-ExtUtils-MakeMaker perl-Test-Fatal
+
+# create the perl-Role-Tiny spec file
+cd ; mkdir src ; cd src
+cpanspec -v Role-Tiny
+
+# build the package
+mv Role-Tiny-*.tar.gz ~/rpmbuild/SOURCES
+rpmbuild -ba --sign perl-Role-Tiny.spec
+
+# install the package
+sudo rpm -ivh ~/rpmbuild/RPMS/noarch/perl-Role-Tiny-1.002005-1.el6.noarch.rpm
+
+# is it live?
+yum info perl-Role-Tiny
+perl -MRole::Tiny -E 'say $Role::Tiny::VERSION'
+
+# nevermind, let's remove it
+sudo yum remove perl-Role-Tiny
+
+# is it gone?
+yum info perl-Role-Tiny
+perl -MRole::Tiny -E 'say $Role::Tiny::VERSION'
